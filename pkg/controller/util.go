@@ -48,6 +48,15 @@ func checkPVC(pvc *v1.PersistentVolumeClaim, annotation string) bool {
 	return true
 }
 
+// returns th
+func getMode(pvc *v1.PersistentVolumeClaim) (string, error) {
+	mode, found := pvc.Annotations[AnnMode]
+	if !found || mode == "" {
+		return "kubevirt", nil
+	}
+	return mode, nil
+}
+
 // returns the endpoint string which contains the full path URI of the target object to be copied.
 func getEndpoint(pvc *v1.PersistentVolumeClaim) (string, error) {
 	ep, found := pvc.Annotations[AnnEndpoint]
@@ -250,6 +259,10 @@ func makeEnv(podEnvVar importPodEnvVar) []v1.EnvVar {
 			Value: podEnvVar.ep,
 		},
 	}
+	env = append(env, v1.EnvVar{
+		Name: common.ImporterMode,
+		Value: podEnvVar.mode,
+	})
 	if podEnvVar.secretName != "" {
 		env = append(env, v1.EnvVar{
 			Name: common.ImporterAccessKeyID,

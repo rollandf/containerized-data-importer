@@ -218,14 +218,23 @@ func (d *DataStream) http() (io.ReadCloser, error) {
 }
 
 // CopyImage copies the source endpoint (vm image) to the provided destination path.
-func CopyImage(dest, endpoint, accessKey, secKey string) error {
+func CopyImage(dest, endpoint, accessKey, secKey, mode string) error {
 	glog.V(1).Infof("copying %q to %q...\n", endpoint, dest)
-	ds, err := NewDataStream(endpoint, accessKey, secKey)
-	if err != nil {
-		return errors.Wrap(err, "unable to create data stream")
+	switch mode {
+	case "registry":
+		glog.V(1).Infof("using skopeo to copy from registry")
+		image.CopyImage(endpoint, "dir:" + common.ImporterWriteDir)
+		image.ExtractImageLayers(common.ImporterWriteDir)
+		return nil
+		//return errors.New("error: exit 1")
+	default:
+		ds, err := NewDataStream(endpoint, accessKey, secKey)
+		if err != nil {
+			return errors.Wrap(err, "unable to create data stream")
+		}
+		defer ds.Close()
+		return ds.copy(dest)
 	}
-	defer ds.Close()
-	return ds.copy(dest)
 }
 
 // SaveStream reads from a stream and saves data to dest

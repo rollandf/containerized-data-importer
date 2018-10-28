@@ -33,9 +33,10 @@ func main() {
 	ep, _ := importer.ParseEnvVar(common.ImporterEndpoint, false)
 	acc, _ := importer.ParseEnvVar(common.ImporterAccessKeyID, false)
 	sec, _ := importer.ParseEnvVar(common.ImporterSecretKey, false)
+	mode, _ := importer.ParseEnvVar(common.ImporterMode, false)
 
 	glog.V(1).Infoln("begin import process")
-	err := importer.CopyImage(common.ImporterWritePath, ep, acc, sec)
+	err := importer.CopyImage(common.ImporterWritePath, ep, acc, sec, mode)
 	if err != nil {
 		glog.Errorf("%+v", err)
 		os.Exit(1)

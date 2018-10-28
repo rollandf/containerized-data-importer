@@ -15,6 +15,8 @@ import (
 )
 
 const (
+	// AnnMode
+	AnnMode = "cdi.kubevirt.io/storage.import.mode"
 	// AnnEndpoint provides a const for our PVC endpoint annotation
 	AnnEndpoint = "cdi.kubevirt.io/storage.import.endpoint"
 	// AnnSecret provides a const for our PVC secretName annotation
@@ -31,7 +33,7 @@ type ImportController struct {
 }
 
 type importPodEnvVar struct {
-	ep, secretName string
+	ep, secretName, mode string
 }
 
 // NewImportController sets up an Import Controller, and returns a pointer to
@@ -99,6 +101,10 @@ func (ic *ImportController) processPvcItem(pvc *v1.PersistentVolumeClaim) error 
 	if pod == nil && needsSync {
 		var podEnvVar importPodEnvVar
 
+		podEnvVar.mode, err = getMode(pvc)
+		if err != nil {
+			return err
+		}
 		podEnvVar.ep, err = getEndpoint(pvc)
 		if err != nil {
 			return err
