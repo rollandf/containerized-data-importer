@@ -260,7 +260,7 @@ func makeEnv(podEnvVar importPodEnvVar) []v1.EnvVar {
 		},
 	}
 	env = append(env, v1.EnvVar{
-		Name: common.ImporterMode,
+		Name:  common.ImporterMode,
 		Value: podEnvVar.mode,
 	})
 	if podEnvVar.secretName != "" {

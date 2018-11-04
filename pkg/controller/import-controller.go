@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	// AnnMode
+	// AnnMode provides the operation mode
 	AnnMode = "cdi.kubevirt.io/storage.import.mode"
 	// AnnEndpoint provides a const for our PVC endpoint annotation
 	AnnEndpoint = "cdi.kubevirt.io/storage.import.endpoint"

@@ -17,11 +17,11 @@ limitations under the License.
 package image
 
 import (
-	"strings"
 	"encoding/json"
 	"fmt"
-	"os"
 	"io/ioutil"
+	"os"
+	"strings"
 
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
@@ -33,7 +33,7 @@ const dataTmpDir string = "/data_tmp"
 
 // SkopeoOperations defines the interface for executing skopeo subprocesses
 type SkopeoOperations interface {
-	CopyImage(string, string) error
+	CopyImage(string, string, string, string) error
 	ExtractTar(string, string) error
 }
 
@@ -50,8 +50,14 @@ func NewSkopeoOperations() SkopeoOperations {
 	return &skopeoOperations{}
 }
 
-func (o *skopeoOperations) CopyImage(url, dest string) error {
-	_, err := skopeoExecFunction(processLimits, "skopeo", "copy", url, dest)
+func (o *skopeoOperations) CopyImage(url, dest, accessKey, secKey string) error {
+	var err error
+	if len(accessKey) > 0 && len(secKey) > 0 {
+		var creds = "--src-creds=" + accessKey + ":" + secKey
+		_, err = skopeoExecFunction(processLimits, "skopeo", "copy", url, dest, creds)
+	} else {
+		_, err = skopeoExecFunction(processLimits, "skopeo", "copy", url, dest)
+	}
 	if err != nil {
 		//os.Remove(dest)
 		return errors.Wrap(err, "could not copy image")
@@ -63,16 +69,15 @@ func (o *skopeoOperations) CopyImage(url, dest string) error {
 func (o *skopeoOperations) ExtractTar(file, dest string) error {
 	_, err := skopeoExecFunction(processLimits, "tar", "-xf", file, "-C", dest)
 	if err != nil {
-		//os.Remove(file)
 		return errors.Wrap(err, "could not extract image")
 	}
 
 	return nil
 }
 
-// CopyImage
-func CopyImage(url, dest string) error {
-	return skopeoInterface.CopyImage(url, dest + dataTmpDir)
+// CopyImage download image from registry with skopeo
+func CopyImage(url, dest, accessKey, secKey string) error {
+	return skopeoInterface.CopyImage(url, dest+dataTmpDir, accessKey, secKey)
 }
 
 type manifest struct {
@@ -82,11 +87,12 @@ type layer struct {
 	Digest string `json:"digest"`
 }
 
+// ExtractImageLayers extracts the image layers tar
 func ExtractImageLayers(dest string) error {
 	manifest := getImageManifest(dest + dataTmpDir)
 	glog.V(1).Infof("manifest:" + manifest.Layers[0].Digest)
 	for _, m := range manifest.Layers {
-		layer := strings.TrimPrefix(m.Digest, "sha256:")		
+		layer := strings.TrimPrefix(m.Digest, "sha256:")
 		file := fmt.Sprintf("%s%s/%s", dest, dataTmpDir, layer)
 		skopeoInterface.ExtractTar(file, dest)
 	}

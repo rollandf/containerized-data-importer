@@ -21,6 +21,8 @@ const (
 	CDIComponentLabel = "cdi.kubevirt.io"
 
 	// host file constants:
+
+	// ImporterWriteDir the data directory
 	ImporterWriteDir = "/data"
 	// ImporterWriteFile provides a constant for our importer/datastream_ginkgo_test and to build ImporterWritePath
 	ImporterWriteFile = "disk.img"
