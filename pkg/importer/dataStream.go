@@ -223,13 +223,7 @@ func CopyImage(dest, endpoint, accessKey, secKey, mode string) error {
 	switch mode {
 	case "registry":
 		glog.V(1).Infof("using skopeo to copy from registry")
-		err := image.CopyImage(endpoint, "dir:"+common.ImporterWriteDir, accessKey, secKey)
-		if err != nil {
-			return errors.Wrap(err, "Failed to download from registry")
-		}
-		image.ExtractImageLayers(common.ImporterWriteDir)
-		return nil
-		//return errors.New("error: exit 1")
+		return image.CopyImage(endpoint, common.ImporterWriteDir, accessKey, secKey)
 	default:
 		ds, err := NewDataStream(endpoint, accessKey, secKey)
 		if err != nil {

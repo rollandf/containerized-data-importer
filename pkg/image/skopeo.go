@@ -21,23 +21,30 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 
 	"kubevirt.io/containerized-data-importer/pkg/system"
 )
 
 const dataTmpDir string = "/data_tmp"
+const whFilePrefix string = ".wh."
 
 // SkopeoOperations defines the interface for executing skopeo subprocesses
 type SkopeoOperations interface {
 	CopyImage(string, string, string, string) error
-	ExtractTar(string, string) error
 }
 
 type skopeoOperations struct{}
+
+type manifest struct {
+	Layers []layer `json:"layers"`
+}
+type layer struct {
+	Digest string `json:"digest"`
+}
 
 var skopeoExecFunction = system.ExecWithLimits
 
@@ -62,54 +69,94 @@ func (o *skopeoOperations) CopyImage(url, dest, accessKey, secKey string) error 
 		//os.Remove(dest)
 		return errors.Wrap(err, "could not copy image")
 	}
-
-	return nil
-}
-
-func (o *skopeoOperations) ExtractTar(file, dest string) error {
-	_, err := skopeoExecFunction(processLimits, "tar", "-xf", file, "-C", dest)
-	if err != nil {
-		return errors.Wrap(err, "could not extract image")
-	}
-
 	return nil
 }
 
 // CopyImage download image from registry with skopeo
 func CopyImage(url, dest, accessKey, secKey string) error {
-	return skopeoInterface.CopyImage(url, dest+dataTmpDir, accessKey, secKey)
+	skopeoDest := "dir:" + dest + dataTmpDir
+	err := skopeoInterface.CopyImage(url, skopeoDest, accessKey, secKey)
+	if err != nil {
+		return errors.Wrap(err, "Failed to download from registry")
+	}
+	err = extractImageLayers(dest)
+	if err != nil {
+		return errors.Wrap(err, "Failed to extract image layers")
+	}
+	return err
 }
 
-type manifest struct {
-	Layers []layer `json:"layers"`
-}
-type layer struct {
-	Digest string `json:"digest"`
-}
+func extractImageLayers(dest string) error {
+	// Parse manifest file
+	manifest, err := getImageManifest(dest + dataTmpDir)
+	if err != nil {
+		return err
+	}
 
-// ExtractImageLayers extracts the image layers tar
-func ExtractImageLayers(dest string) error {
-	manifest := getImageManifest(dest + dataTmpDir)
-	glog.V(1).Infof("manifest:" + manifest.Layers[0].Digest)
+	// Extract layers
 	for _, m := range manifest.Layers {
 		layer := strings.TrimPrefix(m.Digest, "sha256:")
 		file := fmt.Sprintf("%s%s/%s", dest, dataTmpDir, layer)
-		skopeoInterface.ExtractTar(file, dest)
+		err := extractTar(file, dest)
+		if err == nil {
+			err = cleanWhiteoutFiles(dest)
+		}
 	}
+
 	// Clean temp folder
 	os.RemoveAll(dest + dataTmpDir)
-	return nil
+	return err
 }
 
-func getImageManifest(dest string) manifest {
+func getImageManifest(dest string) (*manifest, error) {
 	// Open Manifest.json
 	manifestFile, err := ioutil.ReadFile(dest + "/manifest.json")
 	if err != nil {
-		fmt.Println(err)
+		return nil, errors.Wrap(err, "could not read manifest file")
 	}
 
 	// Parse json file
 	var manifestObj manifest
 	json.Unmarshal(manifestFile, &manifestObj)
-	return manifestObj
+	return &manifestObj, nil
+}
+
+func extractTar(file, dest string) error {
+	_, err := skopeoExecFunction(processLimits, "tar", "-xf", file, "-C", dest)
+	if err != nil {
+		return errors.Wrap(err, "could not extract image")
+	}
+	return nil
+}
+
+func cleanWhiteoutFiles(dest string) error {
+	whFiles, err := getWhiteoutFiles(dest)
+	if err != nil {
+		return err
+	}
+
+	for _, path := range whFiles {
+		os.RemoveAll(path)
+		os.RemoveAll(strings.Replace(path, whFilePrefix, "", 1))
+	}
+	return nil
+}
+
+func getWhiteoutFiles(dest string) ([]string, error) {
+	var whFiles []string
+	err := filepath.Walk(dest,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return errors.Wrapf(err, "Failed reading path: %s", path)
+			}
+			if strings.HasPrefix(info.Name(), whFilePrefix) {
+				whFiles = append(whFiles, path)
+			}
+			return nil
+		})
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed traversing directory: %s", dest)
+	}
+	return whFiles, nil
 }
