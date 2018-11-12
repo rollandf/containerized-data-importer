@@ -15,7 +15,7 @@
 .PHONY: build build-controller build-importer build-apiserver build-uploadproxy build-uploadserver build-functest-image-init build-functest-image-http build-functest \
 		docker docker-controller docker-cloner docker-importer docker-apiserver docker-uploadproxy docker-uploadserver docker-functest-image-init docker-functest-image-http\
 		cluster-sync cluster-sync-controller cluster-sync-cloner cluster-sync-importer cluster-sync-apiserver cluster-sync-uploadproxy cluster-sync-uploadserver \
-		test test-functional test-unit test-lint \
+		test test-functional test-unit test-lint build-registryserver docker-registryserver cluster-sync-registryserver \
 		publish \
 		vet \
 		format \
@@ -48,6 +48,8 @@ build-uploadproxy: WHAT = cmd/cdi-uploadproxy
 build-uploadproxy: build
 build-uploadserver: WHAT = cmd/cdi-uploadserver
 build-uploadserver: build
+build-registryserver: WHAT = cmd/cdi-func-test-registry
+build-registryserver: build
 # Note, the cloner is a bash script and has nothing to build
 build-functest-image-init: WHAT = tools/cdi-func-test-file-host-init
 build-functest-image-init:
@@ -86,6 +88,8 @@ docker-uploadproxy: WHAT = cmd/cdi-uploadproxy
 docker-uploadproxy: docker
 docker-uploadserver: WHAT = cmd/cdi-uploadserver
 docker-uploadserver: docker
+docker-registryserver: WHAT = cmd/cdi-func-test-registry
+docker-registryserver: docker
 
 docker-functest-image: docker-functest-image-http docker-functest-image-init
 docker-functest-image-init: WHAT = tools/cdi-func-test-file-host-init
@@ -109,6 +113,8 @@ push-uploadproxy: WHAT = cmd/cdi-uploadproxy
 push-uploadproxy: push
 push-uploadserver: WHAT = cmd/cdi-uploadserver
 push-uploadserver: push
+push-registryserver: WHAT = cmd/cdi-func-test-registry
+push-registryserver: push
 
 publish: docker
 	./hack/build/build-docker.sh publish ${WHAT}
@@ -152,6 +158,8 @@ cluster-sync-uploadproxy: WHAT = cmd/cdi-uploadproxy
 cluster-sync-uploadproxy: cluster-sync
 cluster-sync-uploadserver: WHAT = cmd/cdi-uploadserver
 cluster-sync-uploadserver: cluster-sync
+cluster-sync-registryserver: WHAT = cmd/cdi-func-test-registry
+cluster-sync-registryserver: cluster-sync
 
 functest:
 	./hack/build/functests.sh

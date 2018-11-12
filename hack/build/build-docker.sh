@@ -25,8 +25,10 @@ shift
 targets="${@:-${DOCKER_IMAGES}}"
 
 printf "Building targets: %s\n" "${targets}"
+echo "FRED"
 
 for tgt in ${targets}; do
+    printf "tgt  %s\n" "${tgt}"
     BIN_NAME="$(basename ${tgt})"
     BIN_PATH="${tgt%/}"
     IMAGE="${DOCKER_REPO}/${BIN_NAME}:${DOCKER_TAG}"

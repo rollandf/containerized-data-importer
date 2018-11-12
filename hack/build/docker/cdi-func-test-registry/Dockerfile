@@ -1,0 +1,3 @@
+FROM registry
+
+EXPOSE 5000
