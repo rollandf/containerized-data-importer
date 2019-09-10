@@ -20,7 +20,7 @@ const (
 	dataVolumePollInterval = 3 * time.Second
 	dataVolumeCreateTime   = 90 * time.Second
 	dataVolumeDeleteTime   = 90 * time.Second
-	dataVolumePhaseTime    = 90 * time.Second
+	dataVolumePhaseTime    = 180 * time.Second
 )
 
 const (
