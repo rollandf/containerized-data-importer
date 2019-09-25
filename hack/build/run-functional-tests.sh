@@ -35,7 +35,7 @@ KUBECTL=${BASE_PATH}/$KUBEVIRT_PROVIDER/.kubectl
 GOCLI=${GOCLI:-${CDI_DIR}/cluster-up/cli.sh}
 KUBE_MASTER_URL=${KUBE_MASTER_URL:-""}
 CDI_NAMESPACE=${CDI_NAMESPACE:-cdi}
-SNAPSHOT_SC=${SNAPSHOT_SC:-csi-rbd}
+SNAPSHOT_SC=${SNAPSHOT_SC:-csi-rbdplugin-snapclass}
 BLOCK_SC=${BLOCK_SC:-csi-rbd}
 
 # parsetTestOpts sets 'pkgs' and test_args

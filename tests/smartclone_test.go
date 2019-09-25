@@ -39,9 +39,9 @@ var _ = Describe("[vendor:cnv-qe@redhat.com][level:component]SmartClone tests", 
 	Describe("Verify DataVolume Smart Cloning - Positive flow", func() {
 		It("succeed creating smart-clone dv", func() {
 			if !f.IsSnapshotStorageClassAvailable() {
-				Skip("Storage Class for clone via snapshot is not available")
+				Skip("Snapshot Class for clone via snapshot is not available")
 			}
-			dataVolume := createDataVolume("dv-smart-clone-test-1", sourcePvc, fillCommand, f.SnapshotSCName, f)
+			dataVolume := createDataVolume("dv-smart-clone-test-1", sourcePvc, fillCommand, "", f)
 			// Wait for snapshot creation to start
 			waitForDvPhase(cdiv1.SnapshotForSmartCloneInProgress, dataVolume, f)
 			verifyEvent(controller.SnapshotForSmartCloneInProgress, dataVolume.Namespace, f)
